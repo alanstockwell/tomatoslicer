@@ -5,15 +5,35 @@ from datetime import (
 from calendar import monthrange
 
 from dateutil.relativedelta import relativedelta
+from . import constants
+from .shortcuts import (
+    align_to_day,
+    align_to_week,
+    align_to_month,
+    align_to_year,
+)
 
 
 class TimeSlice(object):
+    LEFT_EDGE = constants.LEFT_EDGE
+    RIGHT_EDGE = constants.RIGHT_EDGE
+
     _start = None
     _end = None
 
     tz = None
 
     def __init__(self, start, end=None, duration=None):
+        """
+        A TimeSlice requires a start and either an explicit end or a duration from which the end can be derived.
+        All time slices are inclusive of their start and end for the purposes of comparison.
+        :param start: the
+        :type start: datetime
+        :param end:
+        :type end: datetime
+        :param duration:
+        :type duration: timedelta
+        """
         self._start = start
 
         if end is not None and duration is None:
@@ -30,6 +50,9 @@ class TimeSlice(object):
 
     def __add__(self, other):
         return TimeSlice(min(self._start, other._start), end=max(self._end, other._end))
+
+    def __eq__(self, other):
+        return self._start == other._start and self._end == other._end
 
     @property
     def naive(self):
@@ -126,3 +149,27 @@ class TimeSlice(object):
 
     def iter_months(self, count=1):
         return self.iter(relativedelta(months=count))
+
+    def align_start_to_day(self, edge=LEFT_EDGE):
+        self.start = align_to_day(self._start, edge=edge)
+
+    def align_end_to_day(self, edge=RIGHT_EDGE):
+        self.end = align_to_day(self._end, edge=edge)
+
+    def align_start_to_week(self, edge=LEFT_EDGE):
+        self.start = align_to_week(self._start, edge=edge)
+
+    def align_end_to_week(self, edge=RIGHT_EDGE):
+        self.end = align_to_week(self._end, edge=edge)
+
+    def align_start_to_month(self, edge=LEFT_EDGE):
+        self.start = align_to_month(self._start, edge=edge)
+
+    def align_end_to_month(self, edge=RIGHT_EDGE):
+        self.end = align_to_month(self._end, edge=edge)
+
+    def align_start_to_year(self, edge=LEFT_EDGE):
+        self.start = align_to_year(self._start, edge=edge)
+
+    def align_end_to_year(self, edge=RIGHT_EDGE):
+        self.end = align_to_year(self._end, edge=edge)
