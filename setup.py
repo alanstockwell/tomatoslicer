@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='tomatoslicer',
-    version='0.2',
+    version='0.2.1',
     author='Alan Stockwell',
     author_email='alan@stockwell.nz',
     description='A solution to all my myriad time slicing needs. Time math is anathema to sanity',

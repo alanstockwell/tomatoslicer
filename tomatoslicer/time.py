@@ -141,14 +141,14 @@ class TimeSlice(object):
 
             interval_left_cursor = interval_right_cursor
 
-    def iter_days(self, count=1):
-        return self.iter(timedelta(days=count))
+    def iter_days(self, step=1):
+        return self.iter(timedelta(days=step))
 
-    def iter_weeks(self, count=1):
-        return self.iter(timedelta(days=7 * count))
+    def iter_weeks(self, step=1):
+        return self.iter(timedelta(days=7 * step))
 
-    def iter_months(self, count=1):
-        return self.iter(relativedelta(months=count))
+    def iter_months(self, step=1):
+        return self.iter(relativedelta(months=step))
 
     def align_start_to_day(self, edge=LEFT_EDGE):
         self.start = align_to_day(self._start, edge=edge)
