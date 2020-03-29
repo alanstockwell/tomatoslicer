@@ -7,12 +7,6 @@ from calendar import monthrange
 from dateutil.relativedelta import relativedelta
 
 
-ALIGN_MODE_DAY = 0
-ALIGN_MODE_WEEK = 1
-ALIGN_MODE_MONTH = 2
-ALIGN_MODE_YEAR = 3
-
-
 class TimeSlice(object):
     _start = None
     _end = None
