@@ -173,3 +173,11 @@ class TimeSlice(object):
 
     def align_end_to_year(self, edge=RIGHT_EDGE):
         self.end = align_to_year(self._end, edge=edge)
+
+    def shift_back(self, duration):
+        self._start = self._start - duration
+        self._end = self._end - duration
+
+    def shift_forward(self, duration):
+        self._end = self._end + duration
+        self._start = self._start + duration
