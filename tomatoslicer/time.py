@@ -126,8 +126,11 @@ class TimeSlice(object):
         else:
             correct_day = None
 
+        one_microsecond = timedelta(microseconds=1)
+
         while interval_left_cursor < self._end:
-            interval_right_cursor = interval_left_cursor + interval
+            next_interval_left_cursor = interval_left_cursor + interval
+            interval_right_cursor = next_interval_left_cursor - one_microsecond
 
             if correct_day is not None:
                 month_length = monthrange(interval_right_cursor.year, interval_right_cursor.month)[1]
@@ -139,7 +142,7 @@ class TimeSlice(object):
 
             yield TimeSlice(interval_left_cursor, min(interval_right_cursor, self._end))
 
-            interval_left_cursor = interval_right_cursor
+            interval_left_cursor = next_interval_left_cursor
 
     def iter_days(self, step=1):
         return self.iter(timedelta(days=step))
