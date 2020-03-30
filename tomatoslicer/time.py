@@ -121,7 +121,7 @@ class TimeSlice(object):
         interval_left_cursor = self._start
 
         # fix flapping on month math
-        if type(interval) == relativedelta and interval.months is not None:
+        if type(interval) == relativedelta and (interval.months is not None or interval.years is not None):
             correct_day = self._start.day
         else:
             correct_day = None
@@ -152,6 +152,9 @@ class TimeSlice(object):
 
     def iter_months(self, step=1):
         return self.iter(relativedelta(months=step))
+
+    def iter_years(self, step=1):
+        return self.iter(relativedelta(years=step))
 
     def align_start_to_day(self, edge=LEFT_EDGE):
         self.start = align_to_day(self._start, edge=edge)
