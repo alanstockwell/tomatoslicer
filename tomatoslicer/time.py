@@ -54,6 +54,12 @@ class TimeSlice(object):
     def __eq__(self, other):
         return self._start == other._start and self._end == other._end
 
+    def __str__(self):
+        return 'Time Slice: {} - {}'.format(
+            self.start.isoformat(),
+            self.end.isoformat(),
+        )
+
     @property
     def naive(self):
         return self._start.tzinfo is None or self._start.tzinfo.utcoffset(self._start) is None
@@ -120,13 +126,16 @@ class TimeSlice(object):
     def iter(self, interval):
         interval_left_cursor = self._start
 
+        correct_start_day = None
+        correct_end_day = None
+
         # fix flapping on month math
         if type(interval) == relativedelta and (interval.months is not None or interval.years is not None):
-            correct_start_day = self._start.day
-            correct_end_day = self._end.day
-        else:
-            correct_start_day = None
-            correct_end_day = None
+            if self._start.day > 28:
+                correct_start_day = self._start.day
+
+            if self.end.day > 28:
+                correct_end_day = self._end.day
 
         one_microsecond = timedelta(microseconds=1)
 
@@ -134,18 +143,20 @@ class TimeSlice(object):
             next_interval_left_cursor = interval_left_cursor + interval
             interval_right_cursor = next_interval_left_cursor - one_microsecond
 
-            month_length = monthrange(interval_right_cursor.year, interval_right_cursor.month)[1]
-
-            if correct_end_day is not None:
-                interval_right_cursor = interval_right_cursor.replace(day=min(
-                    month_length,
-                    correct_end_day,
-                ))
-
             if correct_start_day is not None:
+                month_length = monthrange(interval_left_cursor.year, interval_left_cursor.month)[1]
+
                 interval_left_cursor = interval_left_cursor.replace(day=min(
                     month_length,
                     correct_start_day,
+                ))
+
+            if correct_end_day is not None:
+                month_length = monthrange(interval_right_cursor.year, interval_right_cursor.month)[1]
+
+                interval_right_cursor = interval_right_cursor.replace(day=min(
+                    month_length,
+                    correct_end_day,
                 ))
 
             yield TimeSlice(interval_left_cursor, min(interval_right_cursor, self._end))
