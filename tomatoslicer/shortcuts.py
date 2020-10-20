@@ -1,7 +1,9 @@
 from calendar import monthrange
+from dateutil.relativedelta import relativedelta
 from datetime import (
     timedelta,
     datetime,
+    date,
     time,
 )
 
@@ -66,3 +68,20 @@ def align_to_month(value, edge=constants.LEFT_EDGE):
 
 def align_to_year(value, edge=constants.LEFT_EDGE):
     return align_to(value, edge=edge, mode=constants.ALIGN_YEAR)
+
+
+def next_nth_of_month(nth, from_date):
+    """
+    Return the next instance of the nth day of the month relative to a specific date.
+    Returns same month if before nth day and next month if after.
+    Returns last day of next month if nth day exceeds next months length
+    :param nth:
+    :param from_date:
+    :return:
+    """
+
+    if from_date.day < nth:
+        return date(from_date.year, from_date.month, nth)
+    else:
+        next_month = from_date + relativedelta(months=1)
+        return next_month.replace(day=min(nth, monthrange(next_month.year, next_month.month)[1]))
