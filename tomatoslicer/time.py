@@ -1,6 +1,7 @@
 from datetime import (
     datetime,
     timedelta,
+    date,
 )
 from calendar import monthrange
 
@@ -206,3 +207,77 @@ class TimeSlice(object):
     def shift_forward(self, duration):
         self._end = self._end + duration
         self._start = self._start + duration
+
+
+class NthWeekdayCalculator(object):
+
+    def __init__(self, year, month, nth, iso_weekday):
+        """
+        Finds the nth instance of a certain weekday in a specific month, e.g. 3rd Wednesday of the month
+        Allows iterating over months via next and previous
+        :param year: Year for the month in question
+        :param month: Month in question
+        :param nth: Sequence of day in question
+        :param iso_weekday: iso_weekday of day in question, e.g. 1 = Mon and 7 = Sun
+        """
+
+        self.year = year
+        self.month = month
+        self.nth = nth
+        self.iso_weekday = iso_weekday
+
+        weekday_offset = iso_weekday - date(year=self.year, month=self.month, day=1).isoweekday()
+
+        sequence_baseline = (7 * (nth - 1)) + 1
+
+        if weekday_offset >= 0:
+            self.day = sequence_baseline + weekday_offset
+        else:
+            self.day = sequence_baseline + weekday_offset + 7
+
+    @staticmethod
+    def new_by_date(from_date, nth, iso_weekday):
+        return NthWeekdayCalculator(
+            year=from_date.year,
+            month=from_date.month,
+            nth=nth,
+            iso_weekday=iso_weekday,
+        )
+
+    @property
+    def date(self):
+        return date(year=self.year, month=self.month, day=self.day)
+
+    @property
+    def previous(self):
+        if self.month == 1:
+            return NthWeekdayCalculator(
+                year=self.year - 1,
+                month=12,
+                nth=self.nth,
+                iso_weekday=self.iso_weekday,
+            )
+        else:
+            return NthWeekdayCalculator(
+                year=self.year,
+                month=self.month - 1,
+                nth=self.nth,
+                iso_weekday=self.iso_weekday,
+            )
+
+    @property
+    def next(self):
+        if self.month == 12:
+            return NthWeekdayCalculator(
+                self.year + 1,
+                1,
+                nth=self.nth,
+                iso_weekday=self.iso_weekday,
+            )
+        else:
+            return NthWeekdayCalculator(
+                year=self.year,
+                month=self.month + 1,
+                nth=self.nth,
+                iso_weekday=self.iso_weekday,
+            )
