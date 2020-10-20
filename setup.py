@@ -1,11 +1,11 @@
 import setuptools
 
-with open("README.md", "r") as fh:
+with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name='tomatoslicer',
-    version='0.3.3',
+    version='0.3.4',
     author='Alan Stockwell',
     author_email='alan@stockwell.nz',
     description='A solution to all my myriad time slicing needs. Time math is anathema to sanity',

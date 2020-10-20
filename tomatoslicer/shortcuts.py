@@ -36,17 +36,20 @@ def align_to(value, edge, mode=constants.ALIGN_DAY):
             new_date = value.date().replace(month=12, day=31)
 
     if edge == constants.LEFT_EDGE:
-        return datetime.combine(
+        result = datetime.combine(
             new_date,
             time.min,
-            tzinfo=value.tzinfo,
         )
     else:
-        return datetime.combine(
+        result = datetime.combine(
             new_date,
             time.max,
-            tzinfo=value.tzinfo,
         )
+
+    if value.tzinfo is None:
+        return result
+    else:
+        return value.tzinfo.localize(result)
 
 
 def align_to_day(value, edge=constants.LEFT_EDGE):
