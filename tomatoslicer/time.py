@@ -281,3 +281,67 @@ class NthWeekdayCalculator(object):
                 nth=self.nth,
                 iso_weekday=self.iso_weekday,
             )
+
+
+class FormattedDuration(object):
+
+    hours = None
+    days = None
+    minutes = None
+
+    def __init__(self, duration, day_label='day', hour_label='hr', minute_label='min',
+                 day_label_plural=None, hour_label_plural=None, minute_label_plural=None):
+
+        self.duration = duration
+
+        self.hours = int(self.duration.total_seconds() // 3600)
+        self.days = int(self.hours / 24)
+        self.minutes = int((self.duration.total_seconds() % 3600) // 60)
+
+        self._day_label = day_label
+        self._hour_label = hour_label
+        self._minute_label = minute_label
+
+        if day_label_plural is None:
+            self._day_label_plural = '{}s'.format(self._day_label)
+        else:
+            self._day_label_plural = day_label_plural
+
+        if hour_label_plural is None:
+            self._hour_label_plural = '{}s'.format(self._hour_label)
+        else:
+            self._hour_label_plural = hour_label_plural
+
+        if minute_label_plural is None:
+            self._minute_label_plural = '{}s'.format(self._minute_label)
+        else:
+            self._minute_label_plural = minute_label_plural
+
+        if self.days > 0:
+            self.hours = self.hours % (self.days * 24)
+
+    def __str__(self):
+        return self.format()
+
+    def format(self):
+        if self.days + self.hours == 0:
+            return '{} {}'.format(
+                self.minutes,
+                self._minute_label if self.minutes == 1 else self._minute_label_plural,
+            )
+        elif self.days == 0:
+            return '{} {} {} {}'.format(
+                self.hours,
+                self._hour_label if self.hours == 1 else self._hour_label_plural,
+                self.minutes,
+                self._minute_label if self.minutes == 1 else self._minute_label_plural,
+            )
+        else:
+            return '{} {} {} {} {} {}'.format(
+                self.days,
+                self._day_label if self.days == 1 else self._day_label_plural,
+                self.hours,
+                self._hour_label if self.hours == 1 else self._hour_label_plural,
+                self.minutes,
+                self._minute_label if self.minutes == 1 else self._minute_label_plural,
+            )
