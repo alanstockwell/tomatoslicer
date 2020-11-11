@@ -5,3 +5,7 @@ ALIGN_DAY = 'day'
 ALIGN_WEEK = 'week'
 ALIGN_MONTH = 'month'
 ALIGN_YEAR = 'year'
+
+ROUNDING_MODE_STANDARD = 'standard'
+ROUNDING_MODE_FLOOR = 'floor'
+ROUNDING_MODE_CEILING = 'ceiling'
