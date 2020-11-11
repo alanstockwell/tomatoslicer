@@ -252,6 +252,19 @@ class TimeSlice(object):
         self._end = self._end + duration
         self._start = self._start + duration
 
+    def format_duration(self, day_label='day', hour_label='hr', minute_label='min',
+                        day_label_plural=None, hour_label_plural=None, minute_label_plural=None):
+
+        return FormattedDuration(
+            self.duration,
+            day_label=day_label,
+            hour_label=hour_label,
+            minute_label=minute_label,
+            day_label_plural=day_label_plural,
+            hour_label_plural=hour_label_plural,
+            minute_label_plural=minute_label_plural,
+        ).format()
+
 
 class NthWeekdayCalculator(object):
 
