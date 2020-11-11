@@ -12,6 +12,8 @@ from .shortcuts import (
     align_to_week,
     align_to_month,
     align_to_year,
+    duration_to_unit_hours,
+    duration_to_rounded_unit_hours,
 )
 
 
@@ -24,16 +26,22 @@ class TimeSlice(object):
 
     tz = None
 
-    def __init__(self, start, end=None, duration=None):
+    def __init__(self, start, end=None, duration=None, decimal_places=2, rounding_step=None, rounding_mode=None):
         """
         A TimeSlice requires a start and either an explicit end or a duration from which the end can be derived.
         All time slices are inclusive of their start and end for the purposes of comparison.
-        :param start: the
+        :param start:
         :type start: datetime
         :param end:
         :type end: datetime
         :param duration:
         :type duration: timedelta
+        :param decimal_places: Used when calculating rounded unit hours
+        :type decimal_places: int
+        :param rounding_step: Used when calculating rounded unit hours
+        :type rounding_step: float
+        :param rounding_mode: Used when calculating rounded unit hours
+        :type rounding_mode: str
         """
         self._start = start
 
@@ -48,6 +56,10 @@ class TimeSlice(object):
 
         if self._start > self._end:
             raise ValueError('Start cannot come after the end of a TimeSlice')
+
+        self.decimal_places = decimal_places
+        self.rounding_step = rounding_step
+        self.rounding_mode = rounding_mode
 
     def __add__(self, other):
         return TimeSlice(min(self._start, other._start), end=max(self._end, other._end))
@@ -76,6 +88,22 @@ class TimeSlice(object):
     @property
     def duration(self):
         return self._end - self._start
+
+    @property
+    def unit_hours(self):
+        return duration_to_unit_hours(
+            self.duration,
+            decimal_places=self.decimal_places,
+        )
+
+    @property
+    def rounded_unit_hours(self):
+        return duration_to_rounded_unit_hours(
+            self.duration,
+            decimal_places=self.decimal_places,
+            rounding_step=self.rounding_step,
+            rounding_mode=self.rounding_mode,
+        )
 
     @property
     def start(self):
@@ -165,10 +193,10 @@ class TimeSlice(object):
             interval_left_cursor = next_interval_left_cursor
 
     def iter_days(self, step=1):
-        return self.iter(timedelta(days=step))
+        return self.iter(relativedelta(days=step))
 
     def iter_weeks(self, step=1):
-        return self.iter(timedelta(days=7 * step))
+        return self.iter(relativedelta(days=7 * step))
 
     def iter_months(self, step=1):
         return self.iter(relativedelta(months=step))
@@ -182,11 +210,19 @@ class TimeSlice(object):
     def align_end_to_day(self, edge=RIGHT_EDGE):
         self.end = align_to_day(self._end, edge=edge)
 
+    def align_to_day(self, start_edge=LEFT_EDGE, end_edge=RIGHT_EDGE):
+        self.align_start_to_day(edge=start_edge)
+        self.align_end_to_day(edge=end_edge)
+
     def align_start_to_week(self, edge=LEFT_EDGE):
         self.start = align_to_week(self._start, edge=edge)
 
     def align_end_to_week(self, edge=RIGHT_EDGE):
         self.end = align_to_week(self._end, edge=edge)
+
+    def align_to_week(self, start_edge=LEFT_EDGE, end_edge=RIGHT_EDGE):
+        self.align_start_to_week(edge=start_edge)
+        self.align_end_to_week(edge=end_edge)
 
     def align_start_to_month(self, edge=LEFT_EDGE):
         self.start = align_to_month(self._start, edge=edge)
@@ -194,17 +230,25 @@ class TimeSlice(object):
     def align_end_to_month(self, edge=RIGHT_EDGE):
         self.end = align_to_month(self._end, edge=edge)
 
+    def align_to_month(self, start_edge=LEFT_EDGE, end_edge=RIGHT_EDGE):
+        self.align_start_to_month(edge=start_edge)
+        self.align_end_to_month(edge=end_edge)
+
     def align_start_to_year(self, edge=LEFT_EDGE):
         self.start = align_to_year(self._start, edge=edge)
 
     def align_end_to_year(self, edge=RIGHT_EDGE):
         self.end = align_to_year(self._end, edge=edge)
 
-    def shift_back(self, duration):
+    def align_to_year(self, start_edge=LEFT_EDGE, end_edge=RIGHT_EDGE):
+        self.align_start_to_year(edge=start_edge)
+        self.align_end_to_year(edge=end_edge)
+
+    def shift_left(self, duration):
         self._start = self._start - duration
         self._end = self._end - duration
 
-    def shift_forward(self, duration):
+    def shift_right(self, duration):
         self._end = self._end + duration
         self._start = self._start + duration
 
