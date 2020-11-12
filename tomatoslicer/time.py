@@ -263,7 +263,7 @@ class TimeSlice(object):
             day_label_plural=day_label_plural,
             hour_label_plural=hour_label_plural,
             minute_label_plural=minute_label_plural,
-        ).format()
+        ).text
 
 
 class NthWeekdayCalculator(object):
@@ -378,9 +378,10 @@ class FormattedDuration(object):
             self.hours = self.hours % (self.days * 24)
 
     def __str__(self):
-        return self.format()
+        return self.text
 
-    def format(self):
+    @property
+    def text(self):
         if self.days + self.hours == 0:
             return '{} {}'.format(
                 self.minutes,
