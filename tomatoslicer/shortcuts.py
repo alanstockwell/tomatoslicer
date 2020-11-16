@@ -19,7 +19,10 @@ def align_to(value, edge, mode=constants.ALIGN_DAY):
         raise ValueError('Invalid alignment mode: {}'.format(str(mode)))
 
     if isinstance(value, datetime):
+        tzinfo = value.tzinfo
         value = value.date()
+    else:
+        tzinfo = None
 
     if mode == constants.ALIGN_DAY:
         new_date = value
@@ -52,10 +55,7 @@ def align_to(value, edge, mode=constants.ALIGN_DAY):
             time.max,
         )
 
-    if value.tzinfo is None:
-        return result
-    else:
-        return value.tzinfo.localize(result)
+    return result if tzinfo is None else tzinfo.localize(result)
 
 
 def align_to_day(value, edge=constants.LEFT_EDGE):
