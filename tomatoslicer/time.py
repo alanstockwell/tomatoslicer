@@ -1,3 +1,5 @@
+import pytz
+
 from datetime import (
     datetime,
     timedelta,
@@ -24,9 +26,8 @@ class TimeSlice(object):
     _start = None
     _end = None
 
-    tz = None
-
-    def __init__(self, start, end=None, duration=None, decimal_places=2, rounding_step=None, rounding_mode=None):
+    def __init__(self, start, end=None, duration=None, tz=None,
+                 decimal_places=2, rounding_step=None, rounding_mode=None):
         """
         A TimeSlice requires a start and either an explicit end or a duration from which the end can be derived.
         All time slices are inclusive of their start and end for the purposes of comparison.
@@ -43,18 +44,27 @@ class TimeSlice(object):
         :param rounding_mode: Used when calculating rounded unit hours
         :type rounding_mode: str
         """
-        self._start = start
+
+        if tz is None:
+            if start.tzinfo is None:
+                self.tz = pytz.utc
+            else:
+                self.tz = pytz.timezone(start.tzinfo.zone)
+        else:
+            self.tz = tz
+
+        self._start = start.astimezone(pytz.utc)
 
         if end is not None and duration is None:
-            self._end = end
+            self.end = end
         elif end is None and duration is not None:
-            self._end = self._start + duration
+            self.end = self.start + duration
         elif end is None and duration is None:
-            self._end = start
+            self.end = self.start
         else:
-            raise ValueError('end and duration cannot both be set')
+            raise ValueError('End and duration cannot both be set')
 
-        if self._start > self._end:
+        if self.start > self.end:
             raise ValueError('Start cannot come after the end of a TimeSlice')
 
         self.decimal_places = decimal_places
@@ -63,8 +73,8 @@ class TimeSlice(object):
 
     def __add__(self, other):
         return TimeSlice(
-            self._start + other,
-            end=self._end + other,
+            self.start + other,
+            end=self.end + other,
             decimal_places=self.decimal_places,
             rounding_step=self.rounding_step,
             rounding_mode=self.rounding_mode,
@@ -72,8 +82,8 @@ class TimeSlice(object):
 
     def __sub__(self, other):
         return TimeSlice(
-            self._start - other,
-            end=self._end - other,
+            self.start - other,
+            end=self.end - other,
             decimal_places=self.decimal_places,
             rounding_step=self.rounding_step,
             rounding_mode=self.rounding_mode,
@@ -87,14 +97,6 @@ class TimeSlice(object):
             self.start.isoformat(),
             self.end.isoformat(),
         )
-
-    @property
-    def naive(self):
-        return self._start.tzinfo is None or self._start.tzinfo.utcoffset(self._start) is None
-
-    @property
-    def tzinfo(self):
-        return self._start.tzinfo
 
     @property
     def zero_length(self):
@@ -122,33 +124,33 @@ class TimeSlice(object):
 
     @property
     def start(self):
-        return self._start
+        return self._start.astimezone(self.tz)
 
     @start.setter
     def start(self, value):
-        self._start = value
+        self._start = value.astimezone(pytz.utc)
 
         if self._start > self._end:
             raise ValueError('Start cannot be set to a time after the end of a TimeSlice')
 
     @property
     def end(self):
-        return self._end
+        return self._end.astimezone(self.tz)
 
     @end.setter
     def end(self, value):
-        self._end = value
+        self._end = value.astimezone(pytz.utc)
 
         if self._start > self._end:
             raise ValueError('End cannot be set to a time before the start of a TimeSlice')
 
     @property
     def range(self):
-        return self._start, self._end
+        return self.start, self.end
 
     def overlaps(self, other, completely=False):
         if type(other) == datetime:
-            return self._start <= other <= self._end
+            return self._start <= pytz.utc.localize(other) <= self._end
         else:
             if completely:
                 return (other._start >= self._start <= other._end) and (other._end <= self._end >= other._start)
@@ -157,7 +159,7 @@ class TimeSlice(object):
 
     def before(self, other):
         if type(other) == datetime:
-            return self._end <= other
+            return self._end <= pytz.utc.localize(other)
         else:
             return self._end <= other._start
 
@@ -168,24 +170,24 @@ class TimeSlice(object):
             return self._start >= other._end
 
     def iter(self, interval):
-        interval_left_cursor = self._start
+        interval_left_cursor = self.start
 
         correct_start_day = None
         correct_end_day = None
 
         # fix flapping on month math
         if isinstance(interval, relativedelta) and (interval.months > 0 or interval.years > 0):
-            if self._start.day > 28:
-                correct_start_day = self._start.day
+            if self.start.day > 28:
+                correct_start_day = self.start.day
 
             if self.end.day > 28:
-                correct_end_day = self._end.day
+                correct_end_day = self.end.day
 
         one_microsecond = timedelta(microseconds=1)
 
-        while interval_left_cursor < self._end:
-            next_interval_left_cursor = interval_left_cursor + interval
-            interval_right_cursor = next_interval_left_cursor - one_microsecond
+        while interval_left_cursor < self.end:
+            next_interval_left_cursor = self.tz.normalize(interval_left_cursor + interval)
+            interval_right_cursor = self.tz.normalize(next_interval_left_cursor - one_microsecond)
 
             if correct_start_day is not None:
                 month_length = monthrange(interval_left_cursor.year, interval_left_cursor.month)[1]
@@ -220,40 +222,40 @@ class TimeSlice(object):
         return self.iter(relativedelta(years=step))
 
     def align_start_to_day(self, edge=LEFT_EDGE):
-        self.start = align_to_day(self._start, edge=edge)
+        self.start = align_to_day(self.start, edge=edge)
 
     def align_end_to_day(self, edge=RIGHT_EDGE):
-        self.end = align_to_day(self._end, edge=edge)
+        self.end = align_to_day(self.end, edge=edge)
 
     def align_to_day(self, start_edge=LEFT_EDGE, end_edge=RIGHT_EDGE):
         self.align_start_to_day(edge=start_edge)
         self.align_end_to_day(edge=end_edge)
 
     def align_start_to_week(self, edge=LEFT_EDGE):
-        self.start = align_to_week(self._start, edge=edge)
+        self.start = align_to_week(self.start, edge=edge)
 
     def align_end_to_week(self, edge=RIGHT_EDGE):
-        self.end = align_to_week(self._end, edge=edge)
+        self.end = align_to_week(self.end, edge=edge)
 
     def align_to_week(self, start_edge=LEFT_EDGE, end_edge=RIGHT_EDGE):
         self.align_start_to_week(edge=start_edge)
         self.align_end_to_week(edge=end_edge)
 
     def align_start_to_month(self, edge=LEFT_EDGE):
-        self.start = align_to_month(self._start, edge=edge)
+        self.start = align_to_month(self.start, edge=edge)
 
     def align_end_to_month(self, edge=RIGHT_EDGE):
-        self.end = align_to_month(self._end, edge=edge)
+        self.end = align_to_month(self.end, edge=edge)
 
     def align_to_month(self, start_edge=LEFT_EDGE, end_edge=RIGHT_EDGE):
         self.align_start_to_month(edge=start_edge)
         self.align_end_to_month(edge=end_edge)
 
     def align_start_to_year(self, edge=LEFT_EDGE):
-        self.start = align_to_year(self._start, edge=edge)
+        self.start = align_to_year(self.start, edge=edge)
 
     def align_end_to_year(self, edge=RIGHT_EDGE):
-        self.end = align_to_year(self._end, edge=edge)
+        self.end = align_to_year(self.end, edge=edge)
 
     def align_to_year(self, start_edge=LEFT_EDGE, end_edge=RIGHT_EDGE):
         self.align_start_to_year(edge=start_edge)
