@@ -62,7 +62,22 @@ class TimeSlice(object):
         self.rounding_mode = rounding_mode
 
     def __add__(self, other):
-        return TimeSlice(min(self._start, other._start), end=max(self._end, other._end))
+        return TimeSlice(
+            self._start + other,
+            end=self._end + other,
+            decimal_places=self.decimal_places,
+            rounding_step=self.rounding_step,
+            rounding_mode=self.rounding_mode,
+        )
+
+    def __sub__(self, other):
+        return TimeSlice(
+            self._start - other,
+            end=self._end - other,
+            decimal_places=self.decimal_places,
+            rounding_step=self.rounding_step,
+            rounding_mode=self.rounding_mode,
+        )
 
     def __eq__(self, other):
         return self._start == other._start and self._end == other._end
