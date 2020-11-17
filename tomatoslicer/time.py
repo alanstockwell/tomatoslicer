@@ -174,7 +174,7 @@ class TimeSlice(object):
         correct_end_day = None
 
         # fix flapping on month math
-        if type(interval) == relativedelta and (interval.months is not None or interval.years is not None):
+        if isinstance(interval, relativedelta) and (interval.months > 0 or interval.years > 0):
             if self._start.day > 28:
                 correct_start_day = self._start.day
 
