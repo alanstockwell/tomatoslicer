@@ -150,7 +150,12 @@ class TimeSlice(object):
 
     def overlaps(self, other, completely=False):
         if type(other) == datetime:
-            return self._start <= pytz.utc.localize(other) <= self._end
+            try:
+                comparison = pytz.utc.localize(other)
+            except ValueError:
+                comparison = other
+
+            return self._start <= comparison <= self._end
         else:
             if completely:
                 return (other._start >= self._start <= other._end) and (other._end <= self._end >= other._start)
