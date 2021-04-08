@@ -4,6 +4,7 @@ from datetime import (
     datetime,
     timedelta,
     date,
+    time,
 )
 from calendar import monthrange
 
@@ -96,6 +97,17 @@ class TimeSlice(object):
         return 'Time Slice: {} - {}'.format(
             self.start.isoformat(),
             self.end.isoformat(),
+        )
+
+    @staticmethod
+    def from_dates(start_date, end_date=None, tz=None):
+        if end_date is None:
+            end_date = start_date
+
+        return TimeSlice(
+            datetime.combine(start_date, time.min),
+            datetime.combine(end_date, time.max),
+            tz=tz,
         )
 
     @property
