@@ -230,13 +230,16 @@ class TimeSlice(object):
 
             next_time_slice = TimeSlice(interval_left_cursor, min(interval_right_cursor, self._end))
 
-            if all((
-                    iterating_months,
-                    counter > 0,
-                    next_interval_left_cursor < self.end,
-            )):
-                # align inner months
-                next_time_slice.align_to_month()
+            if iterating_months:
+                if counter == 0:
+                    # align first month end to month end
+                    next_time_slice.align_end_to_month()
+                elif next_interval_left_cursor < self.end:
+                    # align inner months to month edges
+                    next_time_slice.align_to_month()
+                else:
+                    # align last month start to month start
+                    next_time_slice.align_start_to_month()
 
             yield next_time_slice
 
