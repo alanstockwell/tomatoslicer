@@ -160,6 +160,10 @@ class TimeSlice(object):
     def range(self):
         return self.start, self.end
 
+    @property
+    def date_range(self):
+        return self.start.date(), self.end.date()
+
     def overlaps(self, other, completely=False):
         if type(other) == datetime:
             try:
