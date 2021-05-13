@@ -73,18 +73,24 @@ class TimeSlice(object):
         self.rounding_mode = rounding_mode
 
     def __add__(self, other):
+        start_time = self.start + other
+        end_time = self.end + other
+
         return TimeSlice(
-            self.start + other,
-            end=self.end + other,
+            start_time if self.tz is None else self.tz.normalize(start_time),
+            end=end_time if self.tz is None else self.tz.normalize(end_time),
             decimal_places=self.decimal_places,
             rounding_step=self.rounding_step,
             rounding_mode=self.rounding_mode,
         )
 
     def __sub__(self, other):
+        start_time = self.start - other
+        end_time = self.end - other
+
         return TimeSlice(
-            self.start - other,
-            end=self.end - other,
+            start_time if self.tz is None else self.tz.normalize(start_time),
+            end=end_time if self.tz is None else self.tz.normalize(end_time),
             decimal_places=self.decimal_places,
             rounding_step=self.rounding_step,
             rounding_mode=self.rounding_mode,
@@ -109,6 +115,14 @@ class TimeSlice(object):
             datetime.combine(end_date, time.max),
             tz=tz,
         )
+
+    @property
+    def spans_dst_start(self):
+        return False if self.tz is None else self.start.dst() < self.end.dst()
+
+    @property
+    def spans_dst_end(self):
+        return False if self.tz is None else self.start.dst() > self.end.dst()
 
     @property
     def zero_length(self):
@@ -190,62 +204,15 @@ class TimeSlice(object):
         else:
             return self._start >= other._end
 
-    def iter(self, interval, iterating_months=False):
-        interval_left_cursor = self.start
-
-        correct_start_day = None
-        correct_end_day = None
-
-        # fix flapping on month math
-        if isinstance(interval, relativedelta) and (interval.months > 0 or interval.years > 0):
-            if self.start.day > 28:
-                correct_start_day = self.start.day
-
-            if self.end.day > 28:
-                correct_end_day = self.end.day
-
+    def iter(self, interval):
         one_microsecond = timedelta(microseconds=1)
 
-        counter = 0
+        current_time_slice = TimeSlice(self.start, end=self.start + interval)
 
-        while interval_left_cursor < self.end:
-            next_interval_left_cursor = self.tz.normalize(interval_left_cursor + interval)
-            interval_right_cursor = self.tz.normalize(next_interval_left_cursor - one_microsecond)
+        while current_time_slice.end <= self.end:
+            yield TimeSlice(current_time_slice.start, end=current_time_slice.end - one_microsecond)
 
-            if correct_start_day is not None:
-                month_length = monthrange(interval_left_cursor.year, interval_left_cursor.month)[1]
-
-                interval_left_cursor = interval_left_cursor.replace(day=min(
-                    month_length,
-                    correct_start_day,
-                ))
-
-            if correct_end_day is not None:
-                month_length = monthrange(interval_right_cursor.year, interval_right_cursor.month)[1]
-
-                interval_right_cursor = interval_right_cursor.replace(day=min(
-                    month_length,
-                    correct_end_day,
-                ))
-
-            next_time_slice = TimeSlice(interval_left_cursor, min(interval_right_cursor, self._end))
-
-            if iterating_months:
-                if counter == 0:
-                    # align first month end to month end
-                    next_time_slice.align_end_to_month()
-                elif next_interval_left_cursor < self.end:
-                    # align inner months to month edges
-                    next_time_slice.align_to_month()
-                else:
-                    # align last month start to month start
-                    next_time_slice.align_start_to_month()
-
-            yield next_time_slice
-
-            interval_left_cursor = next_interval_left_cursor
-
-            counter += 1
+            current_time_slice += interval
 
     def iter_days(self, step=1):
         return self.iter(relativedelta(days=step))
@@ -254,7 +221,7 @@ class TimeSlice(object):
         return self.iter(relativedelta(days=7 * step))
 
     def iter_months(self, step=1):
-        return self.iter(relativedelta(months=step), iterating_months=True)
+        return self.iter(relativedelta(months=step))
 
     def iter_years(self, step=1):
         return self.iter(relativedelta(years=step))
