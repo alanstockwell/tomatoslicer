@@ -279,6 +279,21 @@ class TimeSlice(object):
         self._end = self._end + duration
         self._start = self._start + duration
 
+    def split(self, split_time):
+        if not self.overlaps(split_time):
+            raise ValueError('Split time not in range')
+
+        return (
+            TimeSlice(
+                start=self.start,
+                end=split_time - timedelta(microseconds=1),
+            ),
+            TimeSlice(
+                start=split_time,
+                end=self.end,
+            )
+        )
+
     def format_duration(self, day_label='day', hour_label='hr', minute_label='min',
                         day_label_plural=None, hour_label_plural=None, minute_label_plural=None):
 
