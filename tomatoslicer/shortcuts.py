@@ -138,3 +138,51 @@ def duration_to_rounded_unit_hours(duration, decimal_places=None, rounding_step=
         return round(unit_hours * fraction) / fraction
 
     raise ValueError('Invalid rounding mode: {}'.format(rounding_mode))
+
+
+def punch_holes(time_slices, holes):
+    result = []
+
+    time_slices = list(time_slices)
+
+    time_slices.sort(key=lambda x: x.range)
+
+    holes = list(holes)
+
+    holes.sort(key=lambda x: x.range)
+
+    while len(holes) > 0:
+        hole = holes.pop(0)
+
+        for time_slice in time_slices:
+            if hole.end < time_slice.end:
+                break
+
+            if hole.overlaps(time_slice):
+                for part in time_slice.punch_hole(hole):
+                    result.append(part)
+
+    if len(result) == 0:
+        return result
+
+    result.sort(key=lambda x: x.range)
+
+    final_result = []
+
+    main_slice = result.pop()
+
+    while len(result) > 0:
+        next_slice = result.pop()
+
+        try:
+            main_slice.merge(next_slice)
+        except ValueError:
+            final_result.append(main_slice)
+
+            main_slice = next_slice
+
+    final_result.append(main_slice)
+
+    final_result.sort(key=lambda x: x.range)
+
+    return final_result

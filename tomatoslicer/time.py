@@ -1,12 +1,12 @@
 import pytz
 
+from copy import deepcopy
 from datetime import (
     datetime,
     timedelta,
     date,
     time,
 )
-from calendar import monthrange
 
 from dateutil.relativedelta import relativedelta
 from . import constants
@@ -104,6 +104,9 @@ class TimeSlice(object):
             self.start.isoformat(),
             self.end.isoformat(),
         )
+
+    def __repr__(self):
+        return '<{}>'.format(str(self))
 
     @staticmethod
     def from_dates(start_date, end_date=None, tz=None):
@@ -293,6 +296,36 @@ class TimeSlice(object):
                 end=self.end,
             )
         )
+
+    def punch_hole(self, other):
+        if other.overlaps(self, completely=True):
+            return []
+        elif not self.overlaps(other):
+            return [deepcopy(self)]
+
+        parts = []
+
+        try:
+            left_part, right_part = self.split(other.start)
+
+            parts.append(left_part)
+        except ValueError:
+            pass
+
+        try:
+            left_part, right_part = self.split(other.end)
+
+            parts.append(right_part)
+        except ValueError:
+            pass
+
+        return parts
+
+    def merge(self, other):
+        if self.overlaps(other):
+            return TimeSlice(start=min(self.start, other.start), end=max(self.end, other.end))
+
+        raise ValueError('Cannot merge; Time slices do not overlap')
 
     def format_duration(self, day_label='day', hour_label='hr', minute_label='min',
                         day_label_plural=None, hour_label_plural=None, minute_label_plural=None):
