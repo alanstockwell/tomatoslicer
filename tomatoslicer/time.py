@@ -190,10 +190,18 @@ class TimeSlice(object):
 
             return self._start <= comparison <= self._end
         else:
+            occluded = (other._start >= self._start <= other._end) and (other._end <= self._end >= other._start)
+            start_overlap = other._end >= self._start >= other._start
+            end_overlap = other._start <= self._end <= other._end
+
             if completely:
-                return (other._start >= self._start <= other._end) and (other._end <= self._end >= other._start)
+                return occluded
             else:
-                return (other._end >= self._start >= other._start) or (other._start <= self._end <= other._end)
+                return any((
+                    occluded,
+                    start_overlap,
+                    end_overlap,
+                ))
 
     def before(self, other):
         if type(other) == datetime:
@@ -478,3 +486,80 @@ class FormattedDuration(object):
                 self.minutes,
                 self._minute_label if self.minutes == 1 else self._minute_label_plural,
             )
+
+
+class TimeLine(object):
+
+    def __init__(self, time_slices=None, reverse=False):
+        self.time_slices = [] if time_slices is None \
+            else [time_slices] if isinstance(time_slices, TimeSlice) else \
+            list(time_slices)
+
+        self._reverse = reverse
+
+        self.sort()
+
+    @property
+    def reverse(self):
+        return self._reverse
+
+    def sort(self, reverse=None):
+        if reverse is not None:
+            self._reverse = reverse
+
+        self.time_slices.sort(key=lambda x: x.range, reverse=self._reverse)
+
+    def merge_overlap(self):
+        if len(self.time_slices) > 0:
+            reverse = self.reverse
+
+            self.sort(reverse=True)
+
+            merged_time_slices = []
+
+            current_slice = self.time_slices.pop()
+
+            while len(self.time_slices) > 0:
+                next_time_slice = self.time_slices.pop()
+
+                try:
+                    current_slice = current_slice.merge(next_time_slice)
+                except ValueError:
+                    merged_time_slices.append(current_slice)
+
+                    current_slice = next_time_slice
+
+            merged_time_slices.append(current_slice)
+
+            self.time_slices = merged_time_slices
+
+            self.sort(reverse=reverse)
+
+    def flatten(self, reverse=None):
+        self.sort(reverse=reverse)
+        self.merge_overlap()
+
+    def punch_hole(self, hole):
+        reverse = self.reverse
+
+        self.sort(reverse=False)
+
+        punched_time_slices = []
+
+        for time_slice in self.time_slices:
+            if hole.overlaps(time_slice):
+                for punched_time_slice in time_slice.punch_hole(hole):
+                    punched_time_slices.append(punched_time_slice)
+            else:
+                punched_time_slices.append(time_slice)
+
+        self.time_slices = punched_time_slices
+
+        self.sort(reverse=reverse)
+
+    def punch_holes(self, holes):
+        if isinstance(holes, TimeLine):
+            holes = holes.time_slices
+
+        for hole in holes:
+            self.punch_hole(hole)
