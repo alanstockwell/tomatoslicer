@@ -190,17 +190,26 @@ class TimeSlice(object):
 
             return self._start <= comparison <= self._end
         else:
-            occluded = (other._start >= self._start <= other._end) and (other._end <= self._end >= other._start)
-            start_overlap = other._end >= self._start >= other._start
-            end_overlap = other._start <= self._end <= other._end
+            other_overlaps_start = other._start <= self._start <= other._end
+            other_overlaps_end = other._start <= self._end <= other._end
+
+            occluded = other_overlaps_start and other_overlaps_end
 
             if completely:
                 return occluded
             else:
+                overlapping_other_start = self._start <= other._start <= self._end
+                overlapping_other_end = self._start <= other._end <= self._end
+
+                occluding = overlapping_other_start and overlapping_other_end
+
                 return any((
                     occluded,
-                    start_overlap,
-                    end_overlap,
+                    occluding,
+                    other_overlaps_start,
+                    other_overlaps_end,
+                    overlapping_other_start,
+                    overlapping_other_end,
                 ))
 
     def before(self, other):
