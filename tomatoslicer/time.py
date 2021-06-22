@@ -508,6 +508,13 @@ class TimeLine(object):
 
         self.sort()
 
+    def __add__(self, other):
+        new_time_line = TimeLine(self.time_slices + other.time_slices, reverse=self.reverse)
+
+        new_time_line.sort()
+
+        return new_time_line
+
     @property
     def reverse(self):
         return self._reverse
