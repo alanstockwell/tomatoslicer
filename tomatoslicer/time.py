@@ -181,7 +181,13 @@ class TimeSlice(object):
     def date_range(self):
         return self.start.date(), self.end.date()
 
-    def overlaps(self, other, completely=False):
+    def occludes(self, other):
+        return self._start <= other._start <= self._end and self._start <= other._end <= self._end
+
+    def occluded_by(self, other):
+        return other._start <= self._start <= other._end and other._start <= self._end <= other._end
+
+    def overlaps(self, other):
         if type(other) == datetime:
             try:
                 comparison = pytz.utc.localize(other)
@@ -190,27 +196,12 @@ class TimeSlice(object):
 
             return self._start <= comparison <= self._end
         else:
-            other_overlaps_start = other._start <= self._start <= other._end
-            other_overlaps_end = other._start <= self._end <= other._end
-
-            occluded = other_overlaps_start and other_overlaps_end
-
-            if completely:
-                return occluded
-            else:
-                overlapping_other_start = self._start <= other._start <= self._end
-                overlapping_other_end = self._start <= other._end <= self._end
-
-                occluding = overlapping_other_start and overlapping_other_end
-
-                return any((
-                    occluded,
-                    occluding,
-                    other_overlaps_start,
-                    other_overlaps_end,
-                    overlapping_other_start,
-                    overlapping_other_end,
-                ))
+            return any((
+                other._start <= self._start <= other._end,
+                other._start <= self._end <= other._end,
+                self._start <= other._start <= self._end,
+                self._start <= other._end <= self._end,
+            ))
 
     def before(self, other):
         if type(other) == datetime:
@@ -315,7 +306,7 @@ class TimeSlice(object):
         )
 
     def punch_hole(self, other):
-        if other.overlaps(self, completely=True):
+        if self.occluded_by(other):
             return []
         elif not self.overlaps(other):
             return [deepcopy(self)]
