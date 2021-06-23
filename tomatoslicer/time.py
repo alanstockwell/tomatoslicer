@@ -561,6 +561,13 @@ class TimeLine(object):
         self.sort(reverse=reverse)
         self.merge_overlap()
 
+    def overlaps(self, other):
+        for time_slice in self.time_slices:
+            if time_slice.overlaps(other):
+                return True
+
+        return False
+
     def punch_hole(self, hole):
         reverse = self.reverse
 
