@@ -522,6 +522,24 @@ class TimeLine(object):
     def reverse(self):
         return self._reverse
 
+    @property
+    def start(self):
+        return min((_.start for _ in self.time_slices))
+
+    @property
+    def end(self):
+        return max((_.end for _ in self.time_slices))
+
+    @property
+    def outer_duration(self):
+        return self.end - self.start
+
+    @property
+    def cumulative_duration(self):
+        duration = sum((_.duration for _ in self.time_slices))
+
+        return timedelta() if duration == 0 else duration
+
     def copy(self):
         return deepcopy(self)
 
