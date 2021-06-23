@@ -181,6 +181,9 @@ class TimeSlice(object):
     def date_range(self):
         return self.start.date(), self.end.date()
 
+    def copy(self):
+        return deepcopy(self)
+
     def occludes(self, other):
         return self._start <= other._start <= self._end and self._start <= other._end <= self._end
 
@@ -309,7 +312,7 @@ class TimeSlice(object):
         if self.occluded_by(other):
             return []
         elif not self.overlaps(other):
-            return [deepcopy(self)]
+            return [self.copy()]
 
         parts = []
 
@@ -500,15 +503,27 @@ class TimeLine(object):
         self.sort()
 
     def __add__(self, other):
-        new_time_line = TimeLine(self.time_slices + other.time_slices, reverse=self.reverse)
+        new_time_line = self.copy()
 
-        new_time_line.sort()
+        new_time_line.time_slices += other.time_slices
+
+        new_time_line.flatten()
+
+        return new_time_line
+
+    def __sub__(self, other):
+        new_time_line = self.copy()
+
+        new_time_line.punch_holes(other)
 
         return new_time_line
 
     @property
     def reverse(self):
         return self._reverse
+
+    def copy(self):
+        return deepcopy(self)
 
     def sort(self, reverse=None):
         if reverse is not None:
