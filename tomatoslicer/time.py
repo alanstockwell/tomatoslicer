@@ -551,6 +551,9 @@ class TimeLine(object):
     def copy(self):
         return deepcopy(self)
 
+    def append(self, time_slice):
+        self.time_slices.append(time_slice)
+
     def sort(self, reverse=None):
         if reverse is not None:
             self._reverse = reverse
