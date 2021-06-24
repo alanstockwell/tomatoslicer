@@ -490,6 +490,14 @@ class FormattedDuration(object):
                 self._minute_label if self.minutes == 1 else self._minute_label_plural,
             )
 
+    @property
+    def total_hours(self):
+        return self.hours + (self.days * 24)
+
+    @property
+    def total_hours_text(self):
+        return '{}:{:02d}'.format(self.total_hours, self.minutes)
+
 
 class TimeLine(object):
 
