@@ -539,8 +539,12 @@ class TimeLine(object):
         return max((_.end for _ in self.time_slices))
 
     @property
+    def outer_time_slice(self):
+        return TimeSlice(self.start, end=self.end)
+
+    @property
     def outer_duration(self):
-        return self.end - self.start
+        return self.outer_time_slice.duration
 
     @property
     def cumulative_duration(self):
@@ -621,3 +625,51 @@ class TimeLine(object):
 
         for hole in holes:
             self.punch_hole(hole)
+
+    def split(self, split_time):
+        if self.outer_time_slice.overlaps(split_time):
+            reverse = self.reverse
+
+            self.sort(reverse=False)
+
+            left_time_line = TimeLine(reverse=reverse)
+            right_time_line = TimeLine(reverse=reverse)
+
+            for time_slice in self.time_slices:
+                if time_slice.end < split_time:
+                    left_time_line.append(time_slice.copy())
+                elif time_slice.overlaps(split_time):
+                    left_time_slice, right_time_slice = time_slice.split(split_time)
+
+                    left_time_line.append(left_time_slice)
+                    right_time_line.append(right_time_slice)
+                else:
+                    right_time_line.append(time_slice.copy())
+
+            self.sort(reverse=reverse)
+
+            left_time_line.sort()
+            right_time_line.sort()
+
+            return [left_time_line, right_time_line]
+        else:
+            return [self.copy()]
+
+    def crop(self, time_slice):
+        if isinstance(time_slice, TimeLine):
+            time_slice = time_slice.outer_time_slice
+
+        if not self.outer_time_slice.overlaps(time_slice):
+            raise ValueError('Time slice does not overlap timeline')
+
+        kept_part = None
+
+        for part in self.split(time_slice):
+            if part.overlaps(time_slice):
+                kept_part = part
+
+        for part in kept_part.split(time_slice):
+            if part.overlaps(time_slice):
+                kept_part = part
+
+        return kept_part
