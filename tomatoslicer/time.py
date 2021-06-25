@@ -548,9 +548,12 @@ class TimeLine(object):
 
     @property
     def cumulative_duration(self):
-        duration = sum((_.duration for _ in self.time_slices))
+        duration = timedelta()
 
-        return timedelta() if duration == 0 else duration
+        for time_slice in self.time_slices:
+            duration += time_slice.duration
+
+        return duration
 
     def copy(self):
         return deepcopy(self)
