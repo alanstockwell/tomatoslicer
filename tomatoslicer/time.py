@@ -297,11 +297,16 @@ class TimeSlice(object):
         if not self.overlaps(split_time):
             raise ValueError('Split time not in range')
 
-        return (
-            TimeSlice(
+        try:
+            start = TimeSlice(
                 start=self.start,
                 end=split_time - timedelta(microseconds=1),
-            ),
+            )
+        except ValueError:
+            start = None
+
+        return (
+            start,
             TimeSlice(
                 start=split_time,
                 end=self.end,
@@ -319,7 +324,8 @@ class TimeSlice(object):
         try:
             left_part, right_part = self.split(other.start)
 
-            parts.append(left_part)
+            if left_part is not None:
+                parts.append(left_part)
         except ValueError:
             pass
 
@@ -532,19 +538,35 @@ class TimeLine(object):
 
     @property
     def start(self):
-        return min((_.start for _ in self.time_slices))
+        try:
+            return min((_.start for _ in self.time_slices))
+        except ValueError:
+            return None
 
     @property
     def end(self):
-        return max((_.end for _ in self.time_slices))
+        try:
+            return max((_.end for _ in self.time_slices))
+        except ValueError:
+            return None
 
     @property
     def outer_time_slice(self):
-        return TimeSlice(self.start, end=self.end)
+        start = self.start
+
+        if start is None:
+            return None
+
+        return TimeSlice(start, end=self.end)
 
     @property
     def outer_duration(self):
-        return self.outer_time_slice.duration
+        outer_time_slice = self.outer_time_slice
+
+        if outer_time_slice is None:
+            return None
+
+        return outer_time_slice.duration
 
     @property
     def cumulative_duration(self):
@@ -644,7 +666,9 @@ class TimeLine(object):
                 elif time_slice.overlaps(split_time):
                     left_time_slice, right_time_slice = time_slice.split(split_time)
 
-                    left_time_line.append(left_time_slice)
+                    if left_time_slice is not None:
+                        left_time_line.append(left_time_slice)
+
                     right_time_line.append(right_time_slice)
                 else:
                     right_time_line.append(time_slice.copy())
@@ -668,11 +692,13 @@ class TimeLine(object):
         kept_part = None
 
         for part in self.split(time_slice.start):
-            if part.overlaps(time_slice):
+            if part is not None and part.overlaps(time_slice):
                 kept_part = part
 
         for part in kept_part.split(time_slice.end):
-            if part.overlaps(time_slice):
+            if part is not None and part.overlaps(time_slice):
                 kept_part = part
+
+                break
 
         return kept_part
