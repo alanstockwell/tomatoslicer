@@ -664,11 +664,11 @@ class TimeLine(object):
 
         kept_part = None
 
-        for part in self.split(time_slice):
+        for part in self.split(time_slice.start):
             if part.overlaps(time_slice):
                 kept_part = part
 
-        for part in kept_part.split(time_slice):
+        for part in kept_part.split(time_slice.end):
             if part.overlaps(time_slice):
                 kept_part = part
 
