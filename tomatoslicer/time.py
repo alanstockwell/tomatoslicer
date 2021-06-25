@@ -686,7 +686,7 @@ class TimeLine(object):
         if isinstance(time_slice, TimeLine):
             time_slice = time_slice.outer_time_slice
 
-        if not self.outer_time_slice.overlaps(time_slice):
+        if time_slice is None or len(self.time_slices) == 0 or not self.outer_time_slice.overlaps(time_slice):
             raise ValueError('Time slice does not overlap timeline')
 
         kept_part = None
