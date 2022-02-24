@@ -223,7 +223,7 @@ class TimeSlice(object):
 
         current_time_slice = TimeSlice(self.start, end=self.start + interval)
 
-        while current_time_slice.end <= self.end:
+        while current_time_slice.end - one_microsecond <= self.end:
             if current_time_slice.spans_dst_start:
                 current_time_slice.end -= current_time_slice.end.dst()
             elif current_time_slice.spans_dst_end:
