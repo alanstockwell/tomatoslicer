@@ -224,14 +224,14 @@ class TimeSlice(object):
         current_time_slice = TimeSlice(self.start, end=self.start + interval)
 
         while current_time_slice.end - one_microsecond <= self.end:
+            yield TimeSlice(current_time_slice.start, end=current_time_slice.end - one_microsecond)
+
+            current_time_slice += interval
+
             if current_time_slice.spans_dst_start:
                 current_time_slice.end -= current_time_slice.end.dst()
             elif current_time_slice.spans_dst_end:
                 current_time_slice.end += current_time_slice.end.dst()
-
-            yield TimeSlice(current_time_slice.start, end=current_time_slice.end - one_microsecond)
-
-            current_time_slice += interval
 
     def iter_days(self, step=1):
         return self.iter(relativedelta(days=step))
