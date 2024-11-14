@@ -1,4 +1,5 @@
 from calendar import monthrange
+from datetime import tzinfo
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 from datetime import (
@@ -55,7 +56,7 @@ def align_to(value, edge, mode=constants.ALIGN_DAY):
             time.max,
         )
 
-    return result if tzinfo is None else tzinfo.localize(result)
+    return result if tzinfo is None else localize(result, tzinfo)
 
 
 def align_to_day(value, edge=constants.LEFT_EDGE):
@@ -138,3 +139,10 @@ def duration_to_rounded_unit_hours(duration, decimal_places=None, rounding_step=
         return round(unit_hours * fraction) / fraction
 
     raise ValueError('Invalid rounding mode: {}'.format(rounding_mode))
+
+
+def localize(value, tz):
+    if value.tzinfo is None:
+        return value.replace(tzinfo=tz)
+    else:
+        return value.astimezone(tz)

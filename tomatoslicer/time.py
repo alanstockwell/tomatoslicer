@@ -1,4 +1,4 @@
-import pytz
+from datetime import timezone
 
 from copy import deepcopy
 from datetime import (
@@ -18,6 +18,7 @@ from .shortcuts import (
     duration_to_unit_hours,
     duration_to_rounded_unit_hours,
 )
+from .shortcuts import localize
 
 
 class TimeSlice(object):
@@ -48,13 +49,13 @@ class TimeSlice(object):
 
         if tz is None:
             if start.tzinfo is None:
-                self.tz = pytz.utc
+                self.tz = timezone.utc
             else:
-                self.tz = pytz.timezone(start.tzinfo.zone)
+                self.tz = start.tzinfo
         else:
             self.tz = tz
 
-        self._start = start.astimezone(pytz.utc)
+        self._start = start.astimezone(timezone.utc)
 
         if end is not None and duration is None:
             self.end = end
@@ -157,7 +158,7 @@ class TimeSlice(object):
 
     @start.setter
     def start(self, value):
-        self._start = value.astimezone(pytz.utc)
+        self._start = value.astimezone(timezone.utc)
 
         if self._start > self._end:
             raise ValueError('Start cannot be set to a time after the end of a TimeSlice')
@@ -168,7 +169,7 @@ class TimeSlice(object):
 
     @end.setter
     def end(self, value):
-        self._end = value.astimezone(pytz.utc)
+        self._end = value.astimezone(timezone.utc)
 
         if self._start > self._end:
             raise ValueError('End cannot be set to a time before the start of a TimeSlice')
@@ -193,7 +194,7 @@ class TimeSlice(object):
     def overlaps(self, other):
         if type(other) == datetime:
             try:
-                comparison = pytz.utc.localize(other)
+                comparison = localize(other, timezone.utc)
             except ValueError:
                 comparison = other
 
@@ -208,7 +209,7 @@ class TimeSlice(object):
 
     def before(self, other):
         if type(other) == datetime:
-            return self._end <= pytz.utc.localize(other)
+            return self._end <= localize(self._end, timezone.utc)
         else:
             return self._end <= other._start
 
