@@ -78,8 +78,8 @@ class TimeSlice(object):
         end_time = self.end + other
 
         return TimeSlice(
-            start_time if self.tz is None else self.tz.normalize(start_time),
-            end=end_time if self.tz is None else self.tz.normalize(end_time),
+            start_time,
+            end=end_time,
             decimal_places=self.decimal_places,
             rounding_step=self.rounding_step,
             rounding_mode=self.rounding_mode,
@@ -90,8 +90,8 @@ class TimeSlice(object):
         end_time = self.end - other
 
         return TimeSlice(
-            start_time if self.tz is None else self.tz.normalize(start_time),
-            end=end_time if self.tz is None else self.tz.normalize(end_time),
+            start_time,
+            end=end_time,
             decimal_places=self.decimal_places,
             rounding_step=self.rounding_step,
             rounding_mode=self.rounding_mode,
