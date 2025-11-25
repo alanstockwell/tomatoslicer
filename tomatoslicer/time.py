@@ -122,11 +122,23 @@ class TimeSlice(object):
 
     @property
     def spans_dst_start(self):
-        return False if self.tz is None else self.start.dst() < self.end.dst()
+        start_dst = self.start.dst()
+        end_dst = self.end.dst()
+
+        if None in (start_dst, end_dst):
+            return False
+
+        return self.start.dst() < self.end.dst()
 
     @property
     def spans_dst_end(self):
-        return False if self.tz is None else self.start.dst() > self.end.dst()
+        start_dst = self.start.dst()
+        end_dst = self.end.dst()
+
+        if None in (start_dst, end_dst):
+            return False
+
+        return self.start.dst() > self.end.dst()
 
     @property
     def zero_length(self):
